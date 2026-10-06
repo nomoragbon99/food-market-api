@@ -10,8 +10,9 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    // `npx prisma db seed` runs this. Node 26 strips TypeScript natively.
-    seed: "node --experimental-strip-types prisma/seed.ts",
+    // `npx prisma db seed` runs this. tsx, not node --experimental-strip-types:
+    // see BUILD_LOG.md entry 9.
+    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     url: process.env["DATABASE_URL"],
