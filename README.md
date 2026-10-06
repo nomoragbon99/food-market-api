@@ -835,7 +835,7 @@ command output; the scripts that produced them are committed alongside.
 
 ### Paginated request against the live API
 
-![Paginated curl request against the live API](evidence/screenshots/curl-paginated.png)
+![A filtered, sorted, cursor-paginated request against the live API, showing meta.nextCursor and hasMore](evidence/screenshots/curl-paginated.png)
 
 ### Rate limit returning 429 with Retry-After
 
