@@ -1,19 +1,61 @@
+/*
+ * Colours are tokens, defined once per colour scheme.
+ *
+ * The page used to hard-code dark text while globals.css flipped the body
+ * background to near-black under prefers-color-scheme: dark, so the title and
+ * the restaurant names were dark-on-dark. Every text element now takes its
+ * colour from a token that has a value in both schemes.
+ */
 .page {
+  --text: #1a1a1a;
+  --text-muted: #555555;
+  --surface: #ffffff;
+  --surface-sunken: #ffffff;
+  --border: #dddddd;
+  --border-soft: #e2e2e2;
+  --button-bg: #1a1a1a;
+  --button-text: #ffffff;
+  --open: #116655;
+  --closed: #aa1111;
+  --error-text: #7a1b1b;
+  --error-bg: #fdf5f5;
+  --error-border: #e0b4b4;
+
   max-width: 60rem;
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  color: #1a1a1a;
+  color: var(--text);
+  background: var(--surface);
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    --text: #f2f2f2;
+    --text-muted: #b8b8b8;
+    --surface: #0a0a0a;
+    --surface-sunken: #151515;
+    --border: #3a3a3a;
+    --border-soft: #2e2e2e;
+    --button-bg: #f2f2f2;
+    --button-text: #111111;
+    --open: #5fd3b2;
+    --closed: #ff9a9a;
+    --error-text: #ffb4b4;
+    --error-bg: #2a1515;
+    --error-border: #6b2f2f;
+  }
 }
 
 .title {
   font-size: 1.6rem;
   margin: 0 0 0.25rem;
+  color: var(--text);
 }
 
 .subtitle {
   margin: 0 0 1.5rem;
-  color: #555;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -23,9 +65,10 @@
   gap: 0.75rem;
   align-items: flex-end;
   padding: 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 6px;
   margin-bottom: 1.5rem;
+  background: var(--surface-sunken);
 }
 
 .field {
@@ -36,24 +79,30 @@
 }
 
 .field label {
-  color: #555;
+  color: var(--text-muted);
 }
 
 .field input,
 .field select {
   padding: 0.4rem 0.5rem;
-  border: 1px solid #bbb;
+  border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 0.9rem;
   min-width: 10rem;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.field input::placeholder {
+  color: var(--text-muted);
 }
 
 .button {
   padding: 0.45rem 0.9rem;
-  border: 1px solid #1a1a1a;
+  border: 1px solid var(--button-bg);
   border-radius: 4px;
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--button-bg);
+  color: var(--button-text);
   font-size: 0.9rem;
   cursor: pointer;
 }
@@ -64,8 +113,9 @@
 }
 
 .secondary {
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .list {
@@ -77,12 +127,13 @@
 }
 
 .card {
-  border: 1px solid #e2e2e2;
+  border: 1px solid var(--border-soft);
   border-radius: 6px;
   padding: 0.75rem 1rem;
   display: flex;
   justify-content: space-between;
   gap: 1rem;
+  background: var(--surface-sunken);
 }
 
 .cardMain {
@@ -93,48 +144,53 @@
 
 .name {
   font-weight: 600;
+  color: var(--text);
 }
 
 .meta {
   font-size: 0.82rem;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .cardSide {
   text-align: right;
   font-size: 0.82rem;
-  color: #555;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
 .closed {
-  color: #a11;
+  color: var(--closed);
 }
 
 .open {
-  color: #176;
+  color: var(--open);
 }
 
 .status {
   padding: 1.5rem;
-  border: 1px dashed #ccc;
+  border: 1px dashed var(--border);
   border-radius: 6px;
   text-align: center;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .error {
   padding: 1rem;
-  border: 1px solid #e0b4b4;
+  border: 1px solid var(--error-border);
   border-radius: 6px;
-  background: #fdf5f5;
-  color: #7a1b1b;
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.error strong {
+  color: var(--error-text);
 }
 
 .errorCode {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   font-size: 0.8rem;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .footer {
@@ -146,5 +202,5 @@
 
 .count {
   font-size: 0.82rem;
-  color: #555;
+  color: var(--text-muted);
 }

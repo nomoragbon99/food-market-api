@@ -32,9 +32,19 @@ const SORTS = [
   { value: "deliveryFeeMinor", label: "Delivery fee" },
 ];
 
-/** Kobo to naira, for display only. The API always speaks minor units. */
+/**
+ * Kobo to naira, for display only. The API always speaks minor units.
+ * The locale is fixed rather than taken from the browser, so grouping
+ * separators appear the same way for every visitor.
+ */
+const money = new Intl.NumberFormat("en-NG", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  useGrouping: true,
+});
+
 const formatMoney = (minor: number, currency: string) =>
-  `${currency} ${(minor / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  `${currency} ${money.format(minor / 100)}`;
 
 /** Rating is stored in tenths of a star: 45 means 4.5. */
 const formatRating = (rating: number) => `${(rating / 10).toFixed(1)} / 5.0`;

@@ -1,0 +1,26 @@
+
+LIGHT scheme
+  [PASS] page title / page background       #1a1a1a on #ffffff  17.40:1 (needs 3:1)
+  [PASS] restaurant name / card             #1a1a1a on #ffffff  17.40:1 (needs 4.5:1)
+  [PASS] body text / page background        #1a1a1a on #ffffff  17.40:1 (needs 4.5:1)
+  [PASS] muted meta / card                  #555555 on #ffffff  7.46:1 (needs 4.5:1)
+  [PASS] muted meta / page background       #555555 on #ffffff  7.46:1 (needs 4.5:1)
+  [PASS] input text / input background      #1a1a1a on #ffffff  17.40:1 (needs 4.5:1)
+  [PASS] button label / button              #ffffff on #1a1a1a  17.40:1 (needs 4.5:1)
+  [PASS] "Open" badge / card                #116655 on #ffffff  6.87:1 (needs 4.5:1)
+  [PASS] "Closed" badge / card              #aa1111 on #ffffff  7.51:1 (needs 4.5:1)
+  [PASS] error text / error panel           #7a1b1b on #fdf5f5  9.78:1 (needs 4.5:1)
+
+DARK scheme
+  [PASS] page title / page background       #f2f2f2 on #0a0a0a  17.68:1 (needs 3:1)
+  [PASS] restaurant name / card             #f2f2f2 on #151515  16.31:1 (needs 4.5:1)
+  [PASS] body text / page background        #f2f2f2 on #0a0a0a  17.68:1 (needs 4.5:1)
+  [PASS] muted meta / card                  #b8b8b8 on #151515  9.21:1 (needs 4.5:1)
+  [PASS] muted meta / page background       #b8b8b8 on #0a0a0a  9.98:1 (needs 4.5:1)
+  [PASS] input text / input background      #f2f2f2 on #0a0a0a  17.68:1 (needs 4.5:1)
+  [PASS] button label / button              #111111 on #f2f2f2  16.87:1 (needs 4.5:1)
+  [PASS] "Open" badge / card                #5fd3b2 on #151515  9.95:1 (needs 4.5:1)
+  [PASS] "Closed" badge / card              #ff9a9a on #151515  8.99:1 (needs 4.5:1)
+  [PASS] error text / error panel           #ffb4b4 on #2a1515  10.23:1 (needs 4.5:1)
+
+All pairs meet WCAG AA.
