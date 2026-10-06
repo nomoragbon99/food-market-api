@@ -11,8 +11,8 @@
 import { faker } from "@faker-js/faker";
 import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client.ts";
-import { DEFAULT_CURRENCY, SEED } from "../src/config.ts";
+import { PrismaClient } from "../src/generated/prisma/client";
+import { DEFAULT_CURRENCY, SEED } from "../src/config";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
