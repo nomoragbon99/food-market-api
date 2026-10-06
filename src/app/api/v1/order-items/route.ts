@@ -19,3 +19,6 @@ export const GET = withApi(async (request) => {
   );
   return ok(data, meta);
 });
+
+// Shared CORS preflight answer, identical on every route.
+export { preflight as OPTIONS } from "@/lib/http/cors";

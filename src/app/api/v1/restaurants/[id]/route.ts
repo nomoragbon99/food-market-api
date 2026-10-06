@@ -12,3 +12,6 @@ export const GET = withApi<Context>(async (_request, { params }) => {
   if (!restaurant) throw notFound("restaurant", id);
   return ok(restaurant);
 });
+
+// Shared CORS preflight answer, identical on every route.
+export { preflight as OPTIONS } from "@/lib/http/cors";

@@ -27,3 +27,6 @@ export const GET = withApi<Context>(async (request, { params }) => {
 
   return ok(data, { ...meta, orderId });
 });
+
+// Shared CORS preflight answer, identical on every route.
+export { preflight as OPTIONS } from "@/lib/http/cors";

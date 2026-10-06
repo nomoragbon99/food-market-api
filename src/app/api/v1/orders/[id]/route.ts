@@ -50,3 +50,6 @@ export const DELETE = withApi<Context>(async (_request, { params }) => {
   await prisma.order.delete({ where: { id } });
   return noContent();
 });
+
+// Shared CORS preflight answer, identical on every route.
+export { preflight as OPTIONS } from "@/lib/http/cors";

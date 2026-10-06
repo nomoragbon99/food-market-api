@@ -28,3 +28,6 @@ export const POST = withApi(async (request) => {
   const order = await createOrder(body);
   return created(order, `/api/v1/orders/${order.id}`);
 });
+
+// Shared CORS preflight answer, identical on every route.
+export { preflight as OPTIONS } from "@/lib/http/cors";
