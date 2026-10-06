@@ -265,3 +265,23 @@ the run was eventually moved to the background after 600s.
 connection keeps Node's event loop alive.
 
 **Fix:** `await db.end()` at the end of the script. It now exits 0.
+
+## 14. ESLint rejected the consumer page's data-loading effect
+
+**Symptom:** `npm run lint` failed on the new page, while `next build` passed:
+
+```
+src/app/consumer/page.tsx
+  112:10  error  Calling setState synchronously within an effect can trigger cascading renders
+  > 112 |     void load(null);
+        |          ^^^^ Avoid calling setState() directly within an effect   react-hooks/set-state-in-effect
+```
+
+**Cause:** the effect called a `useCallback` that set `loading` and `error` synchronously before
+awaiting anything, so the mount render immediately queued another render.
+
+**Fix:** split the two concerns. `fetchPage()` moved outside the component and returns a result
+instead of setting state. The filter-driven load is an effect whose state updates happen inside a
+nested async function (with an `AbortController`, so superseded requests are dropped rather than
+reported as errors), and "Next page" became a plain event handler, where setting state directly is
+fine. Lint and build both pass, and no rule was suppressed.

@@ -161,3 +161,46 @@ What would replace it: a shared store with an atomic counter — Redis `INCR` pl
 sliding-window log — keyed the same way, so every instance consults one source of truth and the
 counters survive a restart. The address-based key should also be revisited: it throttles everyone
 behind one NAT together, which an authenticated API would avoid by keying on the account instead.
+
+## 10. CORS open to every origin
+
+**Chosen:** every `/api/v1` response carries `Access-Control-Allow-Origin: *`, allows GET, POST,
+PATCH and DELETE, and answers the OPTIONS preflight from the shared wrapper. `Location` and
+`Retry-After` are exposed so browser clients can follow a create and back off on a 429. The headers
+go on error responses too, including the 429 and the 500.
+
+**Rejected:** an allowlist of origins, which is the usual default.
+
+**Why:** the brief is a *public* API — the point is that a browser app on any other site can call
+it. An allowlist would mean a deploy every time someone new wants to try it, and would make the
+published documentation untrue for most readers. The reason a wildcard is safe here specifically is
+that there is nothing to ride on: no cookies, no `Authorization`, no sessions, and
+`Access-Control-Allow-Credentials` is never sent, so a malicious page gets exactly what `curl`
+gets. The day authentication is added, this must change in the same commit: a wildcard origin plus
+credentials is the classic CSRF-by-CORS mistake, and browsers refuse that combination precisely
+because it is dangerous.
+
+Putting the headers on errors matters more than it looks: without them a browser reports a failed
+preflight or an opaque network error, and the client cannot tell a 429 from the server being down.
+
+## 11. The Railway database is both the production and the development database
+
+**Chosen:** one Railway PostgreSQL instance, already migrated and seeded, serves the deployed API
+and local development alike. `npx prisma migrate deploy` and `npx prisma db seed` were run against
+it from a developer machine.
+
+**Rejected:** a local Postgres (or a container) for development with Railway reserved for
+production, and a separate staging database.
+
+**Why:** at this stage it removes a whole class of "works on my machine" problems — one schema, one
+dataset, and the deployed API demonstrably serving the same rows seen locally. It also means the
+deployed service needs no seeding step of its own.
+
+**The trade-off, stated plainly:** there is no safety margin. A mistaken `prisma migrate reset`, a
+destructive migration, or a seed change run from a laptop hits production directly, with no staging
+copy to catch it and no backup discipline in place. Local experiments contend with production for
+the same connection pool. This is acceptable only because the data is synthetic and the project is
+a bootcamp task; the moment any real order exists, the next step is a second database — Railway
+environments make this straightforward — with `DATABASE_URL` pointing at the development one
+locally and migrations promoted to production deliberately rather than as a side effect of running
+a command in the wrong terminal.

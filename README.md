@@ -10,12 +10,16 @@ Next.js (App Router route handlers) + TypeScript + Prisma + PostgreSQL. The API 
 ## Getting started
 
 ```bash
-cp .env.example .env   # then fill in DATABASE_URL yourself
+cp .env.example .env   # then fill in DATABASE_URL and NEXT_PUBLIC_API_BASE_URL yourself
 npm install            # also runs `prisma generate`
 npx prisma migrate deploy
 npx prisma db seed
 npm run dev
 ```
+
+`NEXT_PUBLIC_API_BASE_URL` must be an absolute origin, because the page at `/consumer` calls the
+API cross-origin from the browser. For local work use your machine's LAN address rather than
+`localhost`, e.g. `http://192.168.0.56:3000`.
 
 The seed is deterministic and idempotent: it generates the same rows, including the same UUIDs,
 on every run, so running it twice changes nothing. Volumes and the fixed faker seed live in
@@ -31,6 +35,68 @@ Six rules are enforced by `CHECK` constraints in the migration, because the Pris
 cannot express them: `price_minor > 0`, `unit_price_minor > 0`, `quantity >= 1`,
 `total_minor >= 0`, `delivery_fee_minor >= 0`, and `rating BETWEEN 0 AND 50`. Evidence that they
 reject bad rows is in [evidence/](evidence/).
+
+## The consumer page
+
+One page, at `/consumer`. It lists restaurants with a city filter, a cuisine filter, a sort control
+and a "Next page" button that follows `meta.nextCursor`, and it handles four states: loading, data,
+empty (no matches) and error — including a 429, which it shows with the retry time from the
+`Retry-After` header.
+
+It calls the API from the browser over the **absolute** URL in `NEXT_PUBLIC_API_BASE_URL`, never a
+relative path and never localhost, so it exercises the published API exactly as any third-party
+client would, CORS included. The variable is read at build time, so it must be set before
+`next build`, not only at runtime.
+
+The root page `/` is a one-line pointer to this README and to `/consumer`.
+
+## Deployment (Railway)
+
+Deployed as a long-running Node server, not serverless.
+
+| Setting | Value |
+| --- | --- |
+| Build | `npm run build` → `prisma generate && next build` |
+| Start | `npm start` → `next start` (Next binds the `PORT` Railway provides) |
+| Node | `>=22.0.0`, declared in `package.json` `engines` |
+
+Environment variables to set on the service:
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | The Postgres connection string. Inside Railway use the private address; from a laptop use the public `*.proxy.rlwy.net` one. |
+| `NEXT_PUBLIC_API_BASE_URL` | The deployed origin, e.g. `https://your-service.up.railway.app`. Needed **at build time**. |
+
+### Migrating and seeding
+
+The database is migrated and seeded already. To do it again, from a machine with `.env` filled in:
+
+```bash
+npx prisma migrate deploy   # apply all migrations, including the CHECK constraints
+npx prisma db seed          # deterministic and idempotent: safe to re-run
+```
+
+Equivalent npm scripts exist: `npm run db:migrate` and `npm run db:seed`.
+
+If Prisma reports `P1001` against a database you can otherwise reach, your machine is blocking the
+engine's DNS lookups. Prefix either command with the helper:
+
+```bash
+node scripts/with-resolved-db.mjs npx prisma migrate deploy
+```
+
+See entry 8 of [BUILD_LOG.md](BUILD_LOG.md) for why.
+
+> **Note.** The Railway database is both the production and the development database. That choice,
+> and its trade-off, is recorded as decision 11 in [DECISIONS.md](DECISIONS.md).
+
+### CORS
+
+Every `/api/v1` response allows any origin for GET, POST, PATCH and DELETE, and OPTIONS preflight is
+answered from the shared wrapper. `Location` and `Retry-After` are exposed to browser clients. The
+headers are present on error responses too, so a browser can read a 400, a 429 or a 500 rather than
+seeing an opaque network failure. Decision 10 in [DECISIONS.md](DECISIONS.md) explains why a
+wildcard is safe here and what must change if authentication is ever added.
 
 ## Resource design
 
