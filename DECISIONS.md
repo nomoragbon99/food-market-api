@@ -135,3 +135,29 @@ not a defensible design for real customer data. A real deployment would require 
 every customer and order route, scope each customer to their own orders, and keep email and phone
 out of list responses entirely. Recording it here so the exclusion is a visible decision rather
 than an oversight, and so the first real user account is a blocker, not a surprise.
+
+## 9. In-memory rate limiting, with its limits stated
+
+**Chosen:** a fixed-window counter in a `Map` in the server process, keyed on the client address —
+the first entry of `x-forwarded-for` when a proxy is in front, falling back to `x-real-ip`. The
+count and window come from `RATE_LIMIT` in `src/config.ts`. Exceeding it returns 429 with
+`Retry-After`. Expired windows are deleted on every call, so the map cannot grow without bound.
+
+**Rejected:** Redis (or any shared store) for the counters, and a token bucket instead of a fixed
+window.
+
+**Why, and what is wrong with it:** the brief is a single long-running Node server, which is the
+one deployment shape where an in-process counter is coherent. Three honest limitations:
+
+1. **It resets on restart.** A deploy or a crash clears every counter, so a client that was being
+   throttled gets a fresh allowance immediately.
+2. **It only works on one instance.** Two instances behind a load balancer each permit the full
+   quota, so the effective limit is the configured one multiplied by the instance count. Nothing
+   here detects that, and it fails open rather than closed.
+3. **A fixed window allows bursts at the boundary** — up to twice the limit across two adjacent
+   windows, by spending the allowance at the end of one and the start of the next.
+
+What would replace it: a shared store with an atomic counter — Redis `INCR` plus `EXPIRE`, or a
+sliding-window log — keyed the same way, so every instance consults one source of truth and the
+counters survive a restart. The address-based key should also be revisited: it throttles everyone
+behind one NAT together, which an authenticated API would avoid by keying on the account instead.

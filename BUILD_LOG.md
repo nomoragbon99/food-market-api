@@ -216,3 +216,52 @@ because the numbers are the proof:
   exists and `skipDuplicates` drops the conflicting rows.
 - `evidence/constraint-and-integrity-checks.txt`: three rejected inserts (two SQLSTATE 23514 check
   violations, one 23503 foreign key violation) and the integrity queries, all returning 0.
+
+## 11. Windows .cmd shims cannot be spawned without a shell
+
+**Symptom:** removing `shell: true` from `scripts/with-resolved-db.mjs` to silence the Node
+`DEP0190` deprecation warning replaced the warning with a crash:
+
+```
+node:internal/child_process:440
+    throw new ErrnoException(err, 'spawn');
+```
+
+**Cause:** on Windows `npx` and `tsx` are `.cmd` shims. Node refuses to execute a `.cmd` file
+without a shell (a deliberate change after CVE-2024-27980), so `spawn("npx.cmd", args)` fails.
+
+**Fix:** keep the shell, drop the args array. `DEP0190` fires only when an args *array* is combined
+with `shell: true`, so the command and its arguments are assembled into a single quoted string and
+passed as the sole argument. The warning is gone and the shim runs.
+
+## 12. The pagination check disagreed with Postgres about text ordering
+
+**Symptom:** walking every page of `/api/v1/restaurants?sort=name&order=asc` returned 200 unique
+ids with `nextCursor: null` at the end, but the evidence script reported `ordering correct: false`.
+Fourteen apparent inversions, all of this shape:
+
+```
+"Bauch, Lebsack-O'Connell and Hoppe Spot" > "Bauch - Orn Kitchen"
+"Corwin, Hauck and Zboncak Bistro"        > "Corwin - Kemmer Bistro"
+```
+
+**Cause:** the API was right and the check was wrong. Postgres's collation weighs letters ahead of
+punctuation, so it compares `BauchLebsack` against `BauchOrn` and puts the comma-form first.
+JavaScript's `>` compares code points, where `,` (U+002C) sorts before `-` (U+002D), so it called
+that an inversion. `Intl.Collator` disagreed with Postgres too, in the same 14 places.
+
+**Fix:** the check no longer re-implements SQL ordering in JavaScript. It reads the authoritative
+sequence straight from the database — `select id from restaurants order by <col> <dir>, id <dir>` —
+and compares the walked id sequence to it position by position. Both sorts now match exactly. The
+keyset cursor was never affected: its `>` / `<` comparisons run inside Postgres under the same
+collation as the `ORDER BY`.
+
+## 13. The evidence script hung after printing all its output
+
+**Symptom:** `node evidence/api-checks.mjs` printed "All checks complete." and then never exited;
+the run was eventually moved to the background after 600s.
+
+**Cause:** the direct `pg` client opened for entry 12's ordering check was never closed, and an open
+connection keeps Node's event loop alive.
+
+**Fix:** `await db.end()` at the end of the script. It now exits 0.
