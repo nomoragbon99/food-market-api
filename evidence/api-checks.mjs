@@ -6,6 +6,7 @@
  * Default base URL: http://127.0.0.1:3000
  */
 import { Client } from "pg";
+import { request as fetch } from "../scripts/http.mjs";
 import "dotenv/config";
 
 const BASE = process.argv[2] ?? "http://127.0.0.1:3000";
