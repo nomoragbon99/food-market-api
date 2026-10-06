@@ -204,3 +204,46 @@ a bootcamp task; the moment any real order exists, the next step is a second dat
 environments make this straightforward — with `DATABASE_URL` pointing at the development one
 locally and migrations promoted to production deliberately rather than as a side effect of running
 a command in the wrong terminal.
+
+## 12. Header spoofing against the live host: tested, not assumed
+
+The rate limiter keys on the first address in `x-forwarded-for`. That header is client-supplied, so
+whether it can be forged depends entirely on what the hosting proxy does with it: a proxy that
+*appends* leaves the attacker's value first and the limiter is trivially evaded; a proxy that
+*overwrites* makes the value trustworthy.
+
+**Tested on the live deployment** (`evidence/rate-limit-spoof.txt`): exhausted the limit with
+ordinary requests, then repeated with four forged values.
+
+```
+STEP 1 — accepted 100 requests, then 429 (Retry-After: 24)
+STEP 2 — x-forwarded-for: 1.2.3.4           -> 429
+         x-forwarded-for: 203.0.113.99      -> 429
+         x-forwarded-for: 8.8.8.8, 1.1.1.1  -> 429
+         x-forwarded-for: not-even-an-ip    -> 429
+
+RESULT: NOT EVADABLE
+```
+
+**Not evadable on Railway.** Railway's edge overwrites `x-forwarded-for` with the address it
+observed, so the value the limiter reads is not under the caller's control. No code change was
+needed, and the planned fallback — keying on the last address instead of the first — was not
+applied, because it would have been a change with no effect here and would break the header's
+normal meaning behind a correctly-appending proxy.
+
+**What this result does and does not mean.** It is a property of *Railway's edge*, not of this
+code. The same binary is evadable the moment it runs anywhere that appends rather than overwrites,
+or is exposed directly to the internet with no proxy at all — in which case `x-forwarded-for` is
+pure client input and the limiter can be bypassed with one header. Three things follow:
+
+1. The deployment target is now load-bearing for a security property. Moving hosts means re-running
+   `evidence/spoof-test.mjs` before trusting the limit again.
+2. The honest fix, if this ever needs to hold independently of the host, is to make the trusted
+   source explicit — a configured number of trusted proxy hops, counted from the right-hand end of
+   the header, rather than blind faith in position zero.
+3. None of this changes the limitations in decision 9: the counters still reset on restart and
+   still only work on a single instance.
+
+An earlier draft of this entry would have claimed the limiter was safe because the test passed.
+It passed because of where it is deployed. That is worth writing down precisely, because it is the
+kind of result that silently stops being true.

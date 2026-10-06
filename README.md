@@ -1,5 +1,15 @@
 # food-market-api
 
+**Live API:** `https://food-market-api-production.up.railway.app`
+
+**Consumer page:** [https://food-market-api-production.up.railway.app/consumer](https://food-market-api-production.up.railway.app/consumer)
+
+Try it now:
+
+```bash
+curl "https://food-market-api-production.up.railway.app/api/v1/restaurants?city=Lagos&isOpen=true&sort=rating&order=desc&limit=3"
+```
+
 A public REST API for a food delivery market, plus one small consumer page that calls the deployed API.
 Next.js (App Router route handlers) + TypeScript + Prisma + PostgreSQL. The API is the product.
 
@@ -65,7 +75,7 @@ Environment variables to set on the service:
 | Variable | Value |
 | --- | --- |
 | `DATABASE_URL` | The Postgres connection string. Inside Railway use the private address; from a laptop use the public `*.proxy.rlwy.net` one. |
-| `NEXT_PUBLIC_API_BASE_URL` | The deployed origin, e.g. `https://your-service.up.railway.app`. Needed **at build time**. |
+| `NEXT_PUBLIC_API_BASE_URL` | The deployed origin: `https://food-market-api-production.up.railway.app`. Needed **at build time**. |
 
 ### Migrating and seeding
 
@@ -380,7 +390,7 @@ List restaurants.
 | `sort` | `name` \| `rating` \| `deliveryFeeMinor` \| `createdAt` | `createdAt` |
 
 ```bash
-curl "$BASE_URL/api/v1/restaurants?city=Lagos&isOpen=true&sort=rating&order=desc&limit=2"
+curl "https://food-market-api-production.up.railway.app/api/v1/restaurants?city=Lagos&isOpen=true&sort=rating&order=desc&limit=2"
 ```
 
 ```json
@@ -410,7 +420,7 @@ curl "$BASE_URL/api/v1/restaurants?city=Lagos&isOpen=true&sort=rating&order=desc
 Fetch one restaurant. Malformed id → 400; unknown id → 404.
 
 ```bash
-curl "$BASE_URL/api/v1/restaurants/cf046486-4a95-439b-8dfd-65de855b5fb7"
+curl "https://food-market-api-production.up.railway.app/api/v1/restaurants/cf046486-4a95-439b-8dfd-65de855b5fb7"
 ```
 
 ```json
@@ -442,7 +452,7 @@ here. Unknown restaurant → 404 (not an empty list).
 | `sort` | `name` \| `priceMinor` \| `createdAt` | `createdAt` |
 
 ```bash
-curl "$BASE_URL/api/v1/restaurants/cf046486-4a95-439b-8dfd-65de855b5fb7/menu?isAvailable=true&sort=priceMinor&order=asc&limit=2"
+curl "https://food-market-api-production.up.railway.app/api/v1/restaurants/cf046486-4a95-439b-8dfd-65de855b5fb7/menu?isAvailable=true&sort=priceMinor&order=asc&limit=2"
 ```
 
 ```json
@@ -484,7 +494,7 @@ Menu items across all restaurants. Same filters as the nested route, plus `resta
 | `sort` | `name` \| `priceMinor` \| `createdAt` | `createdAt` |
 
 ```bash
-curl "$BASE_URL/api/v1/menu-items?category=main&isAvailable=true&minPrice=100000&sort=priceMinor&order=asc&limit=3"
+curl "https://food-market-api-production.up.railway.app/api/v1/menu-items?category=main&isAvailable=true&minPrice=100000&sort=priceMinor&order=asc&limit=3"
 ```
 
 ```json
@@ -499,7 +509,7 @@ curl "$BASE_URL/api/v1/menu-items?category=main&isAvailable=true&minPrice=100000
 ### GET /api/v1/menu-items/:id
 
 ```bash
-curl "$BASE_URL/api/v1/menu-items/3c843f16-9c15-4c30-8a7b-c7886735b291"
+curl "https://food-market-api-production.up.railway.app/api/v1/menu-items/3c843f16-9c15-4c30-8a7b-c7886735b291"
 ```
 
 ```json
@@ -526,7 +536,7 @@ curl "$BASE_URL/api/v1/menu-items/3c843f16-9c15-4c30-8a7b-c7886735b291"
 | `sort` | `fullName` \| `createdAt` | `createdAt` |
 
 ```bash
-curl "$BASE_URL/api/v1/customers?city=Abuja&sort=fullName&order=asc&limit=2"
+curl "https://food-market-api-production.up.railway.app/api/v1/customers?city=Abuja&sort=fullName&order=asc&limit=2"
 ```
 
 ```json
@@ -549,7 +559,7 @@ curl "$BASE_URL/api/v1/customers?city=Abuja&sort=fullName&order=asc&limit=2"
 ### GET /api/v1/customers/:id
 
 ```bash
-curl "$BASE_URL/api/v1/customers/a0b3dca1-5f9e-4a0e-9a1f-2b7d6f1c8e44"
+curl "https://food-market-api-production.up.railway.app/api/v1/customers/a0b3dca1-5f9e-4a0e-9a1f-2b7d6f1c8e44"
 ```
 
 ```json
@@ -570,7 +580,7 @@ curl "$BASE_URL/api/v1/customers/a0b3dca1-5f9e-4a0e-9a1f-2b7d6f1c8e44"
 | `sort` | `placedAt` \| `totalMinor` \| `createdAt` | `placedAt` |
 
 ```bash
-curl "$BASE_URL/api/v1/orders?status=delivered&placedFrom=2025-12-01&sort=totalMinor&order=desc&limit=2"
+curl "https://food-market-api-production.up.railway.app/api/v1/orders?status=delivered&placedFrom=2025-12-01&sort=totalMinor&order=desc&limit=2"
 ```
 
 ```json
@@ -598,7 +608,7 @@ curl "$BASE_URL/api/v1/orders?status=delivered&placedFrom=2025-12-01&sort=totalM
 Includes the order's items.
 
 ```bash
-curl "$BASE_URL/api/v1/orders/97a1f037-9c1c-4065-bbf0-7d0038e92c89"
+curl "https://food-market-api-production.up.railway.app/api/v1/orders/97a1f037-9c1c-4065-bbf0-7d0038e92c89"
 ```
 
 ```json
@@ -628,7 +638,7 @@ One order's items. The order comes from the path. Unknown order → 404.
 | `sort` | `quantity` \| `unitPriceMinor` \| `createdAt` | `createdAt` |
 
 ```bash
-curl "$BASE_URL/api/v1/orders/97a1f037-9c1c-4065-bbf0-7d0038e92c89/items?sort=quantity&order=desc"
+curl "https://food-market-api-production.up.railway.app/api/v1/orders/97a1f037-9c1c-4065-bbf0-7d0038e92c89/items?sort=quantity&order=desc"
 ```
 
 ```json
@@ -662,7 +672,7 @@ belonging to another restaurant; an unavailable menu item; the same menu item li
 empty `items` array; any unexpected field.
 
 ```bash
-curl -X POST "$BASE_URL/api/v1/orders" \
+curl -X POST "https://food-market-api-production.up.railway.app/api/v1/orders" \
   -H 'content-type: application/json' \
   -d '{
         "customerId": "a0b3dca1-5f9e-4a0e-9a1f-2b7d6f1c8e44",
@@ -731,7 +741,7 @@ Allowed status moves — anything else is a **409**:
 | `cancelled` | nothing (terminal) |
 
 ```bash
-curl -X PATCH "$BASE_URL/api/v1/orders/97a1f037-9c1c-4065-bbf0-7d0038e92c89" \
+curl -X PATCH "https://food-market-api-production.up.railway.app/api/v1/orders/97a1f037-9c1c-4065-bbf0-7d0038e92c89" \
   -H 'content-type: application/json' \
   -d '{ "status": "confirmed" }'
 ```
@@ -758,7 +768,7 @@ Deletes the order and, by cascade, its order items. **204** with no body, or 404
 exist.
 
 ```bash
-curl -i -X DELETE "$BASE_URL/api/v1/orders/97a1f037-9c1c-4065-bbf0-7d0038e92c89"
+curl -i -X DELETE "https://food-market-api-production.up.railway.app/api/v1/orders/97a1f037-9c1c-4065-bbf0-7d0038e92c89"
 ```
 
 ```
@@ -777,7 +787,7 @@ Order items across all orders.
 | `sort` | `quantity` \| `unitPriceMinor` \| `createdAt` | `createdAt` |
 
 ```bash
-curl "$BASE_URL/api/v1/order-items?minQuantity=3&sort=unitPriceMinor&order=desc&limit=2"
+curl "https://food-market-api-production.up.railway.app/api/v1/order-items?minQuantity=3&sort=unitPriceMinor&order=desc&limit=2"
 ```
 
 ```json
@@ -792,7 +802,7 @@ curl "$BASE_URL/api/v1/order-items?minQuantity=3&sort=unitPriceMinor&order=desc&
 ### GET /api/v1/order-items/:id
 
 ```bash
-curl "$BASE_URL/api/v1/order-items/7a22b4c1-1d9f-4a3e-8c77-2b0d9e5f1a66"
+curl "https://food-market-api-production.up.railway.app/api/v1/order-items/7a22b4c1-1d9f-4a3e-8c77-2b0d9e5f1a66"
 ```
 
 ```json
@@ -817,6 +827,41 @@ Retry-After: 37
 ```
 
 ---
+
+## Evidence
+
+Everything below was produced by running the code, not by describing it. The text files are raw
+command output; the scripts that produced them are committed alongside.
+
+### Paginated request against the live API
+
+![Paginated curl request against the live API](evidence/screenshots/curl-paginated.png)
+
+### Rate limit returning 429 with Retry-After
+
+![A 429 response carrying a Retry-After header](evidence/screenshots/rate-limit-429.png)
+
+### The consumer page
+
+![The consumer page listing restaurants with filters and a Next page button](evidence/screenshots/consumer.png)
+
+### Text evidence
+
+| File | What it shows |
+| --- | --- |
+| [live-checks.txt](evidence/live-checks.txt) | All 25 API checks against the live deployment: clamping, 400/404/422/409 cases, a full two-sort pagination walk, and the rate limit. |
+| [api-checks.txt](evidence/api-checks.txt) | The same checks against a local production build. |
+| [consumer-and-cors-checks.txt](evidence/consumer-and-cors-checks.txt) | CORS preflight and headers, deploy configuration, and the consumer page's four states. |
+| [rate-limit-spoof.txt](evidence/rate-limit-spoof.txt) | Whether a forged `x-forwarded-for` header evades the rate limit on the live host. |
+| [trip-rate-limit-live.txt](evidence/trip-rate-limit-live.txt) | 110 parallel requests tripping the limit, with the resulting 429. |
+| [seed-run-1.txt](evidence/seed-run-1.txt), [seed-run-2.txt](evidence/seed-run-2.txt) | Two seed runs returning identical row counts, proving the seed is idempotent. |
+| [constraint-and-integrity-checks.txt](evidence/constraint-and-integrity-checks.txt) | Three inserts rejected by database constraints, and the data-integrity queries. |
+
+Reproduce the rate-limit evidence yourself:
+
+```bash
+node scripts/trip-rate-limit.mjs https://food-market-api-production.up.railway.app
+```
 
 ## Design decisions
 

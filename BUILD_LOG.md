@@ -285,3 +285,29 @@ instead of setting state. The filter-driven load is an effect whose state update
 nested async function (with an `AbortController`, so superseded requests are dropped rather than
 reported as errors), and "Next page" became a plain event handler, where setting state directly is
 fine. Lint and build both pass, and no rule was suppressed.
+
+## 15. Node's fetch could not reach the Railway deployment, while curl could
+
+**Symptom:** every request to the live URL from Node failed:
+
+```
+ERROR UND_ERR_CONNECT_TIMEOUT
+```
+
+while the same URL answered fine from curl (`http_code=200`), a raw TCP connect to port 443
+succeeded, and DNS resolved correctly.
+
+**Cause:** not the deployment. Node's `fetch` is backed by undici, whose connect path times out
+against Railway's edge on this machine; the built-in `https` module reaches the same host in 634ms.
+`dns.setDefaultResultOrder("ipv4first")` did not help, so it is not simply an IPv6 preference.
+
+**Fix:** `scripts/http.mjs`, a small fetch-shaped client over `node:https` supporting the subset the
+evidence scripts use — method, headers, string body, and a response with `status`, `headers.get()`,
+`text()` and `json()`. `evidence/api-checks.mjs` imports it as `fetch`, so the same script runs
+against both a local server and the live deployment. The live run then passed 25/25.
+
+**Known cosmetic issue:** `scripts/trip-rate-limit.mjs` imports `src/config.ts` to print the
+configured limit, which makes Node emit a `MODULE_TYPELESS_PACKAGE_JSON` warning. Adding
+`"type": "module"` to `package.json` would silence it but risks the Next.js build, and duplicating
+the limit as a literal would break the rule that every tunable number lives in `src/config.ts`.
+Left as-is deliberately.
