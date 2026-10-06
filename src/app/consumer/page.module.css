@@ -1,0 +1,150 @@
+.page {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1a1a1a;
+}
+
+.title {
+  font-size: 1.6rem;
+  margin: 0 0 0.25rem;
+}
+
+.subtitle {
+  margin: 0 0 1.5rem;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.field label {
+  color: #555;
+}
+
+.field input,
+.field select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  min-width: 10rem;
+}
+
+.button {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondary {
+  background: #fff;
+  color: #1a1a1a;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.card {
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 0.82rem;
+  color: #555;
+}
+
+.cardSide {
+  text-align: right;
+  font-size: 0.82rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+.closed {
+  color: #a11;
+}
+
+.open {
+  color: #176;
+}
+
+.status {
+  padding: 1.5rem;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  text-align: center;
+  color: #555;
+}
+
+.error {
+  padding: 1rem;
+  border: 1px solid #e0b4b4;
+  border-radius: 6px;
+  background: #fdf5f5;
+  color: #7a1b1b;
+}
+
+.errorCode {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.footer {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.count {
+  font-size: 0.82rem;
+  color: #555;
+}
