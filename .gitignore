@@ -42,3 +42,6 @@ next-env.d.ts
 
 # keep the env template committed (the .env* rule above would otherwise ignore it)
 !.env.example
+
+# generated Prisma client (recreated by `npm run postinstall` / `prisma generate`)
+/src/generated/

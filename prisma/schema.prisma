@@ -1,0 +1,136 @@
+// Schema for food-market-api. Mirrors the "Resource design" section of README.md.
+//
+// Conventions:
+//  - every id is a generated UUID in a `uuid` column, never a sequential integer;
+//  - money is an integer in minor units (kobo) in a `*_minor` column, with a
+//    `currency` column beside it;
+//  - models map to snake_case plural tables, every field to a snake_case column.
+//
+// The datasource URL is not here: Prisma 7 reads it from prisma7.config.ts.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  preparing
+  delivered
+  cancelled
+
+  @@map("order_status")
+}
+
+model Restaurant {
+  id               String   @id @default(uuid()) @db.Uuid
+  name             String   @db.VarChar(120)
+  slug             String   @unique @db.VarChar(140)
+  cuisine          String   @db.VarChar(60)
+  city             String   @db.VarChar(80)
+  addressLine      String   @map("address_line") @db.VarChar(200)
+  isOpen           Boolean  @default(true) @map("is_open")
+  /// Average rating in tenths of a star, 0-50. A CHECK constraint keeps it in range.
+  rating           Int      @default(0)
+  deliveryFeeMinor Int      @map("delivery_fee_minor")
+  currency         String   @default("NGN") @db.VarChar(3)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  menuItems MenuItem[]
+  orders    Order[]
+
+  @@index([city, cuisine])
+  @@index([createdAt, id])
+  @@index([rating, id])
+  @@map("restaurants")
+}
+
+model MenuItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  restaurantId String   @map("restaurant_id") @db.Uuid
+  name         String   @db.VarChar(120)
+  description  String?  @db.VarChar(500)
+  category     String   @db.VarChar(60)
+  priceMinor   Int      @map("price_minor")
+  currency     String   @default("NGN") @db.VarChar(3)
+  isAvailable  Boolean  @default(true) @map("is_available")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([restaurantId, isAvailable, priceMinor])
+  @@index([category, priceMinor])
+  @@index([createdAt, id])
+  @@map("menu_items")
+}
+
+model Customer {
+  id        String   @id @default(uuid()) @db.Uuid
+  fullName  String   @map("full_name") @db.VarChar(120)
+  email     String   @unique @db.VarChar(160)
+  phone     String   @db.VarChar(20)
+  city      String   @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@index([city])
+  @@index([createdAt, id])
+  @@map("customers")
+}
+
+model Order {
+  id           String      @id @default(uuid()) @db.Uuid
+  customerId   String      @map("customer_id") @db.Uuid
+  restaurantId String      @map("restaurant_id") @db.Uuid
+  status       OrderStatus @default(pending)
+  /// Sum over the order's items of quantity * unit_price_minor, in kobo.
+  totalMinor   Int         @map("total_minor")
+  currency     String      @default("NGN") @db.VarChar(3)
+  note         String?     @db.VarChar(500)
+  placedAt     DateTime    @map("placed_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  items      OrderItem[]
+
+  @@index([customerId, placedAt])
+  @@index([restaurantId, placedAt])
+  @@index([status, placedAt])
+  @@index([placedAt, id])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String @id @default(uuid()) @db.Uuid
+  orderId    String @map("order_id") @db.Uuid
+  menuItemId String @map("menu_item_id") @db.Uuid
+  quantity   Int
+  /// Unit price at the time of ordering, in kobo. Copied from the menu item on
+  /// create and never re-read, so a later price change cannot rewrite history.
+  unitPriceMinor Int      @map("unit_price_minor")
+  currency       String   @default("NGN") @db.VarChar(3)
+  /// Menu item name at the time of ordering, for the same reason.
+  nameSnapshot   String   @map("name_snapshot") @db.VarChar(120)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  // Also serves lookups by order_id alone, as its leftmost prefix.
+  @@unique([orderId, menuItemId])
+  @@index([menuItemId])
+  @@map("order_items")
+}
