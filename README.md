@@ -19,17 +19,47 @@ Next.js (App Router route handlers) + TypeScript + Prisma + PostgreSQL. The API 
 
 ## Getting started
 
+You need **Node 22 or newer** (`node -v`) and a **PostgreSQL database** you can reach. Any Postgres
+will do — local, Docker, Railway, Neon.
+
 ```bash
-cp .env.example .env   # then fill in DATABASE_URL and NEXT_PUBLIC_API_BASE_URL yourself
-npm install            # also runs `prisma generate`
+cp .env.example .env   # then fill in both variables yourself, see below
+npm install            # also runs `prisma generate` via postinstall
 npx prisma migrate deploy
 npx prisma db seed
 npm run dev
 ```
 
-`NEXT_PUBLIC_API_BASE_URL` must be an absolute origin, because the page at `/consumer` calls the
-API cross-origin from the browser. For local work use your machine's LAN address rather than
-`localhost`, e.g. `http://192.168.0.56:3000`.
+Then check it works:
+
+```bash
+curl "http://127.0.0.1:3000/api/v1/restaurants?limit=2&city=Lagos"
+```
+
+You should get a `{ "data": [...], "meta": {...} }` envelope with two restaurants.
+
+### The two environment variables
+
+| Variable | What to put in it |
+| --- | --- |
+| `DATABASE_URL` | Your Postgres connection string. On Railway use the **public** `*.proxy.rlwy.net` address from a developer machine; the private `*.railway.internal` one only resolves inside Railway. |
+| `NEXT_PUBLIC_API_BASE_URL` | An **absolute** origin for the API. Locally, your machine's own LAN address and port, e.g. `http://192.0.2.10:3000` — run `ipconfig` (Windows) or `ipconfig getifaddr en0` (macOS) to find yours. |
+
+`NEXT_PUBLIC_API_BASE_URL` must be absolute and must not be `localhost`, because the page at
+`/consumer` calls the API cross-origin from the browser, exactly as any third-party client would.
+If it is missing, the API still works but `/consumer` renders an error panel reading
+"NEXT_PUBLIC_API_BASE_URL is not set" instead of a restaurant list — that is the expected symptom,
+not a bug. In production it is read at **build time**, so it must be set before `next build`.
+
+### Things you will see that are not errors
+
+- `npm install` warns that `esbuild` and `unrs-resolver` have install scripts "not yet covered by
+  allowScripts". Both are build-time tooling and nothing here needs them to run; leave them
+  unapproved. Only `prisma` and `@prisma/engines` are approved, in `package.json`.
+- Prisma prints an "Update available 7.10.0 -> 8.0.0-rc.20" banner. **Do not take it.** Prisma's
+  `latest` tag currently points at a release candidate; this project pins the stable 7.x line
+  deliberately, and the CLI and client must stay on the same major. See entry 3 of
+  [BUILD_LOG.md](BUILD_LOG.md).
 
 The seed is deterministic and idempotent: it generates the same rows, including the same UUIDs,
 on every run, so running it twice changes nothing. Volumes and the fixed faker seed live in

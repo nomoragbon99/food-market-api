@@ -10,7 +10,14 @@
  */
 import { readFileSync } from "node:fs";
 
-const ORIGIN = process.argv[2] ?? "http://192.168.0.56:3000";
+// Pass the origin as an argument, or set NEXT_PUBLIC_API_BASE_URL. It must be
+// absolute and not localhost, since the point is to exercise a cross-origin call.
+const ORIGIN = process.argv[2] ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+if (!ORIGIN) {
+  console.error("Usage: node evidence/consumer-and-cors-checks.mjs <origin>");
+  console.error("  e.g. node evidence/consumer-and-cors-checks.mjs http://192.0.2.10:3000");
+  process.exit(1);
+}
 const BROWSER_ORIGIN = "https://some-other-site.example";
 
 const line = (title) => console.log(`\n${"=".repeat(74)}\n${title}\n${"=".repeat(74)}`);
