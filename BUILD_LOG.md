@@ -143,3 +143,76 @@ exposes two variables: `DATABASE_URL` (private) and `DATABASE_PUBLIC_URL` (the T
 `*.proxy.rlwy.net` host on a high port).
 
 **Fix:** not applied by me — `.env` is the user's to edit. Reported and stopped there.
+
+## 8. P1001 from Prisma against a database that is provably reachable
+
+**Symptom:** with the public Railway proxy address in `.env`, every Prisma CLI command failed:
+
+```
+$ npx prisma migrate deploy
+Datasource "db": PostgreSQL database "railway", schema "public" at "<db-host>.proxy.rlwy.net:<port>"
+
+Error: P1001: Can't reach database server at `<db-host>.proxy.rlwy.net:<port>`
+```
+
+Yet the same host, port and credentials connected fine from Node:
+
+```
+PG CONNECT OK
+PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2) on x86_64-pc-linux-gnu
+db= railway user= postgres
+```
+
+A raw TCP connect to `<db-host>.proxy.rlwy.net:<port>` also succeeded, while `nslookup` timed out for
+*every* hostname on this machine, including ones that then connected.
+
+**Cause:** not the database, and not the agent sandbox (the failure persisted with sandboxing
+disabled). UDP port 53 is blocked on this machine, so direct DNS queries time out. Node resolves
+through the Windows resolver and works; Prisma's native engine (a Rust binary) performs its own DNS
+resolution and gets nothing, which it reports as the generic "can't reach database server".
+
+**Fix:** `scripts/with-resolved-db.mjs` resolves `DATABASE_URL`'s hostname with
+`dns.lookup` — i.e. through the OS resolver — substitutes the IP into the URL in memory, and spawns
+the real command with that URL in its environment. The URL is never printed. All Prisma commands
+are run through it:
+
+```
+$ node scripts/with-resolved-db.mjs npx prisma migrate deploy
+Resolved <db-host>.proxy.rlwy.net -> <resolved-ip> (credentials not printed)
+...
+All migrations have been successfully applied.
+```
+
+This is a local-environment workaround, not a project requirement: on a machine with working DNS,
+`npx prisma migrate deploy` can be run directly.
+
+## 9. `node --experimental-strip-types` cannot load the generated Prisma client
+
+**Symptom:**
+
+```
+$ node --experimental-strip-types prisma/seed.ts
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+'C:\Users\HP\Documents\Consumable API\src\generated\prisma\enums'
+imported from C:\Users\HP\Documents\Consumable API\src\generated\prisma\client.ts
+```
+
+**Cause:** the Prisma 7 `prisma-client` generator emits TypeScript that imports siblings with an
+explicit `.ts` extension (`./enums.ts`). Node's type stripping does not resolve those specifiers the
+way the TypeScript compiler does, so the import fails at `./enums`.
+
+**Fix:** added `tsx` as a devDependency and set the seed command in `prisma7.config.ts` to
+`tsx prisma/seed.ts`. The plan had flagged this as the fallback if native stripping failed.
+`esbuild` (tsx's dependency) has an unapproved install script; it was deliberately left unapproved
+and tsx works regardless.
+
+## 10. Seed and evidence output
+
+Both seed runs and the constraint checks are saved under `evidence/`. Nothing to fix — recorded
+because the numbers are the proof:
+
+- `evidence/seed-run-1.txt`, `evidence/seed-run-2.txt`: identical row counts (200 / 1792 / 300 /
+  600 / 1487), 6.98s and 7.63s. The second run inserts nothing, because every generated UUID already
+  exists and `skipDuplicates` drops the conflicting rows.
+- `evidence/constraint-and-integrity-checks.txt`: three rejected inserts (two SQLSTATE 23514 check
+  violations, one 23503 foreign key violation) and the integrity queries, all returning 0.

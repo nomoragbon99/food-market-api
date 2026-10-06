@@ -11,9 +11,26 @@ Next.js (App Router route handlers) + TypeScript + Prisma + PostgreSQL. The API 
 
 ```bash
 cp .env.example .env   # then fill in DATABASE_URL yourself
-npm install
+npm install            # also runs `prisma generate`
+npx prisma migrate deploy
+npx prisma db seed
 npm run dev
 ```
+
+The seed is deterministic and idempotent: it generates the same rows, including the same UUIDs,
+on every run, so running it twice changes nothing. Volumes and the fixed faker seed live in
+[src/config.ts](src/config.ts).
+
+If Prisma reports `P1001` against a database you can otherwise reach, your machine's DNS is
+likely blocking the engine's own lookups; prefix the command with
+`node scripts/with-resolved-db.mjs` and see entry 8 of [BUILD_LOG.md](BUILD_LOG.md).
+
+### Database constraints
+
+Six rules are enforced by `CHECK` constraints in the migration, because the Prisma schema language
+cannot express them: `price_minor > 0`, `unit_price_minor > 0`, `quantity >= 1`,
+`total_minor >= 0`, `delivery_fee_minor >= 0`, and `rating BETWEEN 0 AND 50`. Evidence that they
+reject bad rows is in [evidence/](evidence/).
 
 ## Resource design
 
@@ -24,6 +41,7 @@ Conventions that apply to every resource below:
 - `id` is a generated **UUID** (v4), never a sequential integer.
 - `createdAt` and `updatedAt` are `DateTime` (UTC), set by the database.
 - Money is an **integer in minor units** (kobo) in a `*Minor` column, with a `currency` column (ISO 4217, default `NGN`) beside it. Never a decimal or float.
+- `restaurants.rating` follows the same integer discipline: it is stored in **tenths of a star**, so a rating of **45 means 4.5 stars**. Divide by 10 to display.
 - Table names are `snake_case` plural; JSON field names are `camelCase`.
 
 ### restaurants
@@ -37,7 +55,7 @@ Conventions that apply to every resource below:
 | `city` | String(80) | yes | e.g. `Lagos`, `Abuja`. **Filterable.** |
 | `addressLine` | String(200) | yes | Street address within `city`. |
 | `isOpen` | Boolean | yes | Default `true`. **Filterable.** |
-| `rating` | Int | yes | Average rating in **tenths of a star**, `0`-`50`. An integer so it sorts exactly and avoids float drift. Default `0`. **Sortable.** |
+| `rating` | Int | yes | Average rating in **tenths of a star**, `0`-`50` — `45` means 4.5 stars. An integer so it sorts exactly and avoids float drift. Default `0`. A `CHECK` constraint keeps it in range. **Sortable.** |
 | `deliveryFeeMinor` | Int | yes | Delivery fee in kobo. **Filterable** (range) and **sortable**. |
 | `currency` | String(3) | yes | ISO 4217, default `NGN`. Pairs with `deliveryFeeMinor`. |
 | `createdAt` | DateTime | yes | **Sortable** (default sort). |
