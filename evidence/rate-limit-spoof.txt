@@ -1,0 +1,31 @@
+Target: https://food-market-api-production.up.railway.app/api/v1/restaurants?limit=1
+
+STEP 1 — exhaust the limit with ordinary requests (no forged header)
+  accepted 100 requests, then tripped
+  first rejection:
+    status      : 429
+    Retry-After : 24
+    body        : {"error":{"code":"RATE_LIMITED","message":"Rate limit of 100 requests per 60s exceeded."}}
+
+STEP 2 — repeat with made-up x-forwarded-for values
+  x-forwarded-for: 1.2.3.4
+    status      : 429
+    Retry-After : 23
+    body        : {"error":{"code":"RATE_LIMITED","message":"Rate limit of 100 requests per 60s exceeded."}}
+  x-forwarded-for: 203.0.113.99
+    status      : 429
+    Retry-After : 23
+    body        : {"error":{"code":"RATE_LIMITED","message":"Rate limit of 100 requests per 60s exceeded."}}
+  x-forwarded-for: 8.8.8.8, 1.1.1.1
+    status      : 429
+    Retry-After : 23
+    body        : {"error":{"code":"RATE_LIMITED","message":"Rate limit of 100 requests per 60s exceeded."}}
+  x-forwarded-for: not-even-an-ip
+    status      : 429
+    Retry-After : 22
+    body        : {"error":{"code":"RATE_LIMITED","message":"Rate limit of 100 requests per 60s exceeded."}}
+
+RESULT
+  NOT EVADABLE — all 4 forged headers still got 429.
+  The proxy overwrites x-forwarded-for with the real client address, so the
+  value the limiter reads is not under the caller's control.

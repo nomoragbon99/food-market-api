@@ -1,0 +1,16 @@
+(node:29356) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/HP/Documents/Consumable%20API/src/config.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\Users\HP\Documents\Consumable API\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Target : https://food-market-api-production.up.railway.app/api/v1/restaurants?limit=1
+Limit  : 100 requests per 60s (from src/config.ts)
+Firing 110 requests in parallel...
+
+110 requests completed in 1.37s
+  200: 92
+  429: 18
+
+One more request:
+  status      : 429
+  Retry-After : 46
+  body        : {"error":{"code":"RATE_LIMITED","message":"Rate limit of 100 requests per 60s exceeded."}}
