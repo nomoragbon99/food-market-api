@@ -5,7 +5,7 @@
  * OS resolver. On a machine where UDP port 53 is blocked (corporate network,
  * some VPNs), Node connects fine but the engine reports P1001 against a host
  * that is demonstrably reachable. Resolving the name here, where the OS
- * resolver is used, sidesteps that.
+ * resolver is used, sidesteps that. See BUILD_LOG.md entry 8.
  *
  * The rewritten URL is passed through the child process environment and is
  * never printed. Usage:
@@ -32,7 +32,14 @@ if (!command) {
   process.exit(1);
 }
 
-const child = spawn(command, args, {
+// A shell is unavoidable here: on Windows npx and tsx are .cmd shims, which
+// Node refuses to spawn directly. But DEP0190 only fires when an args array is
+// combined with `shell: true`, so the command is assembled into one string and
+// passed with no args array. Arguments containing whitespace are quoted.
+const quote = (part) => (/[\s"]/.test(part) ? `"${part.replaceAll('"', '\\"')}"` : part);
+const commandLine = [command, ...args].map(quote).join(" ");
+
+const child = spawn(commandLine, {
   stdio: "inherit",
   shell: true,
   env: { ...process.env, DATABASE_URL: url.toString() },
