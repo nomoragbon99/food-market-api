@@ -1,0 +1,159 @@
+
+==========================================================================
+1. Query and id handling
+==========================================================================
+
+[OK ] GET /api/v1/restaurants?limit=5000
+  meta.limit is 100 (max from src/config.ts), rows returned: 100
+  meta: {"total":200,"limit":100,"nextCursor":"eyJ2IjoxLCJzIjoiY3JlYXRlZEF0IiwibyI6ImRlc2MiLCJrIjoiMjAyNS0wNS0xOFQwMzozNToxNi4zMTVaIiwiaSI6IjEzYmJiYjY3LTNkY2YtNDhkYi05Y2M4LTFjYjdiZWRmYzdkYyJ9","hasMore":true}
+
+[OK ] GET /api/v1/restaurants?limit=-1
+  expected 400, got 400
+  negative limit
+  body: {"error":{"code":"BAD_REQUEST","message":"limit must be at least 1, got -1.","details":[{"parameter":"limit","message":"limit must be at least 1, got -1."}]}}
+
+[OK ] GET /api/v1/restaurants?limit=abc
+  expected 400, got 400
+  non-numeric limit
+  body: {"error":{"code":"BAD_REQUEST","message":"limit must be a whole number between 1 and 100, got \"abc\".","details":[{"parameter":"limit","message":"limit must be a whole number between 1 and 100, got \"abc\"."}]}}
+
+[OK ] GET /api/v1/restaurants?sort=banana
+  expected 400, got 400
+  unknown sort field
+  body: {"error":{"code":"BAD_REQUEST","message":"sort must be one of: name, rating, deliveryFeeMinor, createdAt.","details":[{"parameter":"sort","message":"sort must be one of: name, rating, deliveryFeeMinor, createdAt."}]}}
+
+[OK ] GET /api/v1/restaurants?cursor=not-a-real-cursor
+  expected 400, got 400
+  malformed cursor
+  body: {"error":{"code":"BAD_REQUEST","message":"The cursor is not valid. Use the nextCursor value from a previous response."}}
+
+[OK ] GET /api/v1/restaurants?citi=Lagos
+  expected 400, got 400
+  unknown query parameter
+  body: {"error":{"code":"BAD_REQUEST","message":"Unknown query parameter(s): citi.","details":[{"parameter":"(query)","message":"Unknown query parameter(s): citi."}]}}
+
+[OK ] GET /api/v1/restaurants/not-a-uuid
+  expected 400, got 400
+  malformed id
+  body: {"error":{"code":"BAD_REQUEST","message":"\"not-a-uuid\" is not a valid restaurant id. Expected a UUID."}}
+
+[OK ] GET /api/v1/restaurants/00000000-0000-4000-8000-000000000000
+  expected 404, got 404
+  well-formed id that does not exist
+  body: {"error":{"code":"NOT_FOUND","message":"No restaurant with id 00000000-0000-4000-8000-000000000000."}}
+
+==========================================================================
+2. A cursor replayed under a different sort
+==========================================================================
+
+[OK ] GET /api/v1/restaurants?sort=rating&order=asc&limit=5&cursor=eyJ2IjoxLCJzIjoibmFtZSIsIm8iOiJhc2MiLCJrIjoiQmFsaXN0cmVyaSBMTEMgU3BvdCIsImkiOiJjZjA0NjQ4Ni00YTk1LTQzOWItOGRmZC02NWRlODU1YjVmYjcifQ
+  expected 400, got 400
+  cursor issued for sort=name used with sort=rating
+  body: {"error":{"code":"BAD_REQUEST","message":"This cursor was issued for sort=name&order=asc but the request asked for sort=rating&order=asc. Start the list again without a cursor."}}
+
+==========================================================================
+3. Body validation and status transitions
+==========================================================================
+
+[OK ] POST /api/v1/orders
+  expected 422, got 422
+  POST missing customerId and items
+  body: {"error":{"code":"VALIDATION_FAILED","message":"The request body failed validation.","details":[{"field":"customerId","message":"Invalid input: expected string, received undefined"},{"field":"items","message":"Invalid input: expected array, received undefined"}]}}
+
+[OK ] POST /api/v1/orders
+  expected 422, got 422
+  same menu item twice in one order
+  body: {"error":{"code":"VALIDATION_FAILED","message":"The request body failed validation.","details":[{"field":"items[1].menuItemId","message":"Menu item 3c843f16-9c15-4c30-8a7b-c7886735b291 appears more than once. Use one line with a larger quantity."}]}}
+
+[OK ] POST /api/v1/orders
+  expected 422, got 422
+  menu item from another restaurant
+  body: {"error":{"code":"VALIDATION_FAILED","message":"The request body failed validation.","details":[{"field":"items[0].menuItemId","message":"Menu item 778564f9-1191-4f22-adca-fee2ada48d93 belongs to a different restaurant."}]}}
+
+[OK ] POST /api/v1/orders
+  expected 422, got 422
+  empty items array
+  body: {"error":{"code":"VALIDATION_FAILED","message":"The request body failed validation.","details":[{"field":"items","message":"items must contain at least one item."}]}}
+
+[OK ] POST /api/v1/orders (valid)
+  status 201, Location: /api/v1/orders/984f6bca-7aea-4caa-8be1-115790115d04
+  totalMinor 3029300, expected 3029300
+  snapshots: [{"nameSnapshot":"Orange-infused Lamb Roast 3","unitPriceMinor":814300,"quantity":1},{"nameSnapshot":"Loquats-infused Quail 7","unitPriceMinor":1107500,"quantity":2}]
+
+[OK ] PATCH /api/v1/orders/984f6bca-7aea-4caa-8be1-115790115d04
+  expected 422, got 422
+  PATCH with a field that is not status or note
+  body: {"error":{"code":"VALIDATION_FAILED","message":"The request body failed validation.","details":[{"field":"totalMinor","message":"Unknown field(s): totalMinor. Only the documented fields are accepted."},{"field":"(body)","message":"Provide at least one of: status, note."}]}}
+
+[OK ] PATCH /api/v1/orders/984f6bca-7aea-4caa-8be1-115790115d04
+  expected 409, got 409
+  forbidden move: pending -> delivered
+  body: {"error":{"code":"CONFLICT","message":"Cannot change status from pending to delivered. Allowed from pending: confirmed, cancelled.","details":{"from":"pending","to":"delivered","allowed":["confirmed","cancelled"]}}}
+
+[OK ] PATCH pending -> confirmed: 200, status now confirmed
+
+[OK ] PATCH /api/v1/orders/984f6bca-7aea-4caa-8be1-115790115d04
+  expected 409, got 409
+  forbidden move: confirmed -> pending
+  body: {"error":{"code":"CONFLICT","message":"Cannot change status from confirmed to pending. Allowed from confirmed: preparing, cancelled.","details":{"from":"confirmed","to":"pending","allowed":["preparing","cancelled"]}}}
+[OK ] PATCH confirmed -> cancelled: 200, status now cancelled
+
+[OK ] PATCH /api/v1/orders/984f6bca-7aea-4caa-8be1-115790115d04
+  expected 409, got 409
+  terminal state cannot move
+  body: {"error":{"code":"CONFLICT","message":"Cannot change status: cancelled is a terminal state.","details":{"from":"cancelled","to":"preparing","allowed":[]}}}
+
+[OK ] DELETE /api/v1/orders/984f6bca-7aea-4caa-8be1-115790115d04: 204 (no body: null)
+
+[OK ] DELETE /api/v1/orders/984f6bca-7aea-4caa-8be1-115790115d04
+  expected 404, got 404
+  DELETE an order that is already gone
+  body: {"error":{"code":"NOT_FOUND","message":"No order with id 984f6bca-7aea-4caa-8be1-115790115d04."}}
+
+==========================================================================
+4. Paginating every page of /restaurants under two sorts
+==========================================================================
+
+sort=name&order=asc
+  pages followed: 10
+  rows collected: 200, unique ids: 200
+  meta.total on last page: 200
+  ordering matches "ORDER BY name asc, id asc" from the database: true
+  sort values, first and last: "Abshire Group Spot" ... "Zulauf - Johns Spot"
+  final nextCursor: null / hasMore: false
+  [OK ] 200 unique ids, correct order, nextCursor null at the end
+
+sort=createdAt&order=desc
+  pages followed: 10
+  rows collected: 200, unique ids: 200
+  meta.total on last page: 200
+  ordering matches "ORDER BY createdAt desc, id desc" from the database: true
+  sort values, first and last: "2025-10-03T03:59:21.066Z" ... "2025-01-01T04:57:15.904Z"
+  final nextCursor: null / hasMore: false
+  [OK ] 200 unique ids, correct order, nextCursor null at the end
+
+same 200 restaurants under both sorts: true
+
+==========================================================================
+5. Filter + sort + pagination in one request
+==========================================================================
+
+GET /api/v1/menu-items?category=main&isAvailable=true&minPrice=100000&sort=priceMinor&order=asc&limit=3
+  status 200
+  meta: {"total":279,"limit":3,"nextCursor":"eyJ2IjoxLCJzIjoicHJpY2VNaW5vciIsIm8iOiJhc2MiLCJrIjoiMTA5NzAwIiwiaSI6IjY5ZDUxM2IyLTgwY2MtNGIyOS1iOGQyLTczZWZkNTk1MjI1NyJ9","hasMore":true}
+    105800  main   available=true  Latvian Hijiki Soup 6
+    107800  main   available=true  Minestrone 10
+    109700  main   available=true  Som Tam 1
+  next page first row priceMinor: 118800 (>= last row above: true)
+
+==========================================================================
+6. Rate limit
+==========================================================================
+
+requests accepted before the limit tripped: 100
+[OK ] status 429
+  Retry-After header: 37
+  body: {"error":{"code":"RATE_LIMITED","message":"Rate limit of 100 requests per 60s exceeded."}}
+  a different IP is unaffected: 200
+
+All checks complete.
