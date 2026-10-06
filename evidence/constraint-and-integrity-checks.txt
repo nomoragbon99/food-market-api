@@ -1,0 +1,22 @@
+=== Inserts that must be rejected ===
+
+1. menu item with price_minor = 0
+  rejected: SQLSTATE 23514 new row for relation "menu_items" violates check constraint "menu_items_price_minor_positive"
+  constraint: menu_items_price_minor_positive
+
+2. order item with quantity = 0
+  rejected: SQLSTATE 23514 new row for relation "order_items" violates check constraint "order_items_quantity_min_one"
+  constraint: order_items_quantity_min_one
+
+3. order pointing at a customer that does not exist
+  rejected: SQLSTATE 23503 insert or update on table "orders" violates foreign key constraint "orders_customer_id_fkey"
+  constraint: orders_customer_id_fkey
+
+=== Data integrity ===
+
+orders whose total_minor differs from the sum of their items: 0
+order items whose menu item belongs to another restaurant: 0
+order items whose snapshot differs from the live menu item: 0 (0 only because no price has changed since seeding)
+order statuses present: pending=112, confirmed=130, preparing=112, delivered=125, cancelled=121
+placed_at spread: 2025-10-04 to 2026-01-01 across 90 distinct days
+menu items appearing twice in one order: 0

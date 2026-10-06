@@ -1,0 +1,12 @@
+Loaded Prisma config from prisma7.config.ts.
+
+Running seed command `tsx prisma/seed.ts` ...
+Seed finished in 6.98s
+Row counts:
+  restaurants  200
+  menu_items   1792
+  customers    300
+  orders       600
+  order_items  1487
+
+The seed command has been executed.
