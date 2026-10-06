@@ -1,0 +1,90 @@
+
+==========================================================================
+1. Deploy configuration
+==========================================================================
+  build script : prisma generate && next build
+  start script : next start
+  engines.node : >=22.0.0
+  [OK ] build runs prisma generate then next build
+  [OK ] start runs next start (Next reads Railway's PORT)
+  [OK ] Node version declared
+  [OK ] .env.example documents NEXT_PUBLIC_API_BASE_URL
+  [OK ] .env.example documents DATABASE_URL
+
+==========================================================================
+2. CORS
+==========================================================================
+
+OPTIONS /api/v1/restaurants (preflight)
+  status: 204
+  access-control-allow-origin: *
+  access-control-allow-methods: GET, POST, PATCH, DELETE, OPTIONS
+  access-control-allow-headers: Content-Type
+  access-control-expose-headers: Location, Retry-After
+  access-control-max-age: 86400
+  [OK ] preflight answered, all four verbs plus OPTIONS allowed
+  [OK ] a 200 (200) carries Access-Control-Allow-Origin: *
+  [OK ] a 400 (400) carries Access-Control-Allow-Origin: *
+  [OK ] a 404 (404) carries Access-Control-Allow-Origin: *
+
+==========================================================================
+3. The four states of /consumer
+==========================================================================
+
+GET /consumer -> 200, 8890 bytes of HTML
+  [OK ] city filter
+  [OK ] cuisine filter
+  [OK ] sort control
+  [OK ] direction control
+  [OK ] absolute API base URL baked in
+  [OK ] no localhost reference
+
+STATE: data — the page's first request with no filters
+  200, rows: 10, meta: {"total":200,"limit":10,"nextCursor":"eyJ2IjoxLCJzIjoiY3JlYXRlZEF0IiwibyI6ImRlc2MiLCJrIjoiMjAyNS0wOS0xM1QxODo1NTozOS41NzhaIiwiaSI6ImE1NjU2NTk0LWFjYzQtNGIyZi1iMTYyLTg3Mjk1ZTM2OThhMyJ9","hasMore":true}
+  first row: Barrows - Terry Bistro (Abuja, grill)
+  [OK ] renders the data state
+
+STATE: data — city filter
+  city=Lagos -> 200, total 31, every row in Lagos: true
+  [OK ] filter narrows the list
+
+STATE: data — city + cuisine filter together
+  city=Lagos&cuisine=nigerian -> 200, total 4
+  [OK ] second filter narrows further
+
+STATE: data — sort control
+  sort=name&order=asc -> 200, first three: ["Abshire Group Spot","Ankunding - Schulist Spot","Bahringer, Gutmann and Spencer Kitchen"]
+  sort=rating&order=desc -> 200, first three: [50,50,50]
+  sort=deliveryFeeMinor&order=asc -> 200, first three: [0,300,400]
+
+STATE: data — "Next page" follows nextCursor
+  page 1: 10 rows, hasMore true
+  page 2: 10 rows, hasMore true
+  overlap between pages: 0
+  page 1 last: Bauch - Orn Kitchen
+  page 2 first: Bednar, Wolff and Gorczany Spot
+  [OK ] next page appends 10 new rows, no repeats
+
+STATE: empty — filters that match nothing
+  city=Atlantis -> 200, rows: 0, meta: {"total":0,"limit":10,"nextCursor":null,"hasMore":false}
+  [OK ] empty state: 200 with an empty array, not an error
+
+STATE: error — a failing request
+  400 {"error":{"code":"BAD_REQUEST","message":"limit must be at least 1, got -1.","details":[{"parameter":"limit","message":"limit must be at least 1, got -1."}]}}
+  [OK ] error state gets a code and message to show
+
+STATE: error — 429 with its retry time
+  accepted 100 requests, then 429
+  Retry-After: 36
+  Access-Control-Allow-Origin on the 429: *
+  body: {"error":{"code":"RATE_LIMITED","message":"Rate limit of 100 requests per 60s exceeded."}}
+  [OK ] page can show "try again in 36 seconds"
+
+==========================================================================
+4. Root page
+==========================================================================
+
+GET / -> 200
+  [OK ] one-line pointer to the README and /consumer
+
+All checks complete.
